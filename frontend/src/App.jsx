@@ -1,36 +1,41 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-
+import React, { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
   const [jokes, setJokes] = useState([]);
   const [numberOfJokes, setNumberOfJokes] = useState(5);
+  const [loading, setLoading] = useState(false); // Track loading state
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:3000/jokes?amount=${numberOfJokes}`)
+    fetchJokes(); // Fetch jokes when component mounts
+  }, []);
+
+  const fetchJokes = () => {
+    setLoading(true); // Set loading to true when fetching jokes
+
+    fetch(`/api/jokes?amount=${numberOfJokes}`)
       .then((response) => {
-        setJokes(response.data);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setJokes(data);
+        setLoading(false); // Set loading to false when jokes are fetched
       })
       .catch((error) => {
-        console.log(error);
+        console.error("Error fetching jokes:", error.message);
+        setLoading(false); // Set loading to false on error
       });
-  }, [numberOfJokes]); 
+  };
 
   const handleNumberChange = (e) => {
     setNumberOfJokes(e.target.value);
   };
 
-  const fetchJokes = () => {
-    axios
-      .get(`http://localhost:3000/jokes?amount=${numberOfJokes}`)
-      .then((response) => {
-        setJokes(response.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+  const handleButtonClick = () => {
+    fetchJokes(); // Fetch jokes when button is clicked
   };
 
   return (
@@ -47,13 +52,19 @@ function App() {
         required
         pattern="[0-9]*"
       />
-      <button onClick={fetchJokes}>Get Jokes</button>
-      {jokes.map((joke, index) => (
-        <div key={index}>
-          <h3>{joke.setup}</h3>
-          <h3>{joke.delivery}</h3>
-        </div>
-      ))}
+      <button onClick={handleButtonClick} disabled={loading}>
+        {loading ? "Loading..." : "Get Jokes"}
+      </button>
+      {loading ? (
+        <p>Loading jokes...</p>
+      ) : (
+        jokes.map((joke, index) => (
+          <div key={index}>
+            <h4>{joke.setup}</h4>
+            <p>{joke.delivery}</p>
+          </div>
+        ))
+      )}
     </>
   );
 }
