@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import "./App.css";
 
 function App() {
@@ -8,26 +9,23 @@ function App() {
 
   useEffect(() => {
     fetchJokes(); // Fetch jokes when component mounts
-  }, []);
+  },[] );
 
-  const fetchJokes = () => {
+  const fetchJokes = async () => {
     setLoading(true); // Set loading to true when fetching jokes
 
-    fetch(`/api/jokes?amount=${numberOfJokes}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setJokes(data);
-        setLoading(false); // Set loading to false when jokes are fetched
-      })
-      .catch((error) => {
-        console.error("Error fetching jokes:", error.message);
-        setLoading(false); // Set loading to false on error
-      });
+    try {
+      const response = await axios.get(`/api/jokes?amount=${numberOfJokes}`);
+      console.log("Response from server:", response); // Debugging log
+      if (response.status !== 200) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      setJokes(response.data); // Store jokes in state
+    } catch (error) {
+      console.error("Error fetching jokes:", error.message);
+    } finally {
+      setLoading(false); // Set loading to false whether successful or not
+    }
   };
 
   const handleNumberChange = (e) => {
@@ -39,8 +37,9 @@ function App() {
   };
 
   return (
-    <>
+    <div className="App">
       <h1>Soumik was here!</h1>
+      <div>
       <input
         type="number"
         placeholder="Enter number of jokes"
@@ -55,17 +54,22 @@ function App() {
       <button onClick={handleButtonClick} disabled={loading}>
         {loading ? "Loading..." : "Get Jokes"}
       </button>
+      </div>
       {loading ? (
         <p>Loading jokes...</p>
       ) : (
-        jokes.map((joke, index) => (
-          <div key={index}>
-            <h4>{joke.setup}</h4>
-            <p>{joke.delivery}</p>
+        jokes.length > 0 && (
+          <div>
+            {jokes.map((joke, index) => (
+              <div key={index}>
+                <h4>{joke.setup}</h4>
+                <p>{joke.delivery}</p>
+              </div>
+            ))}
           </div>
-        ))
+        )
       )}
-    </>
+    </div>
   );
 }
 
